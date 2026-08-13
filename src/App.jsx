@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTheme } from './hooks/useTheme'
 import About from './components/About'
 import Educations from './components/Educations'
@@ -12,6 +12,7 @@ function App() {
   const { theme, toggleTheme } = useTheme()
   const [activeSection, setActiveSection] = useState('about')
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const editorTextRef = useRef(null)
 
   const sections = [
     { id: 'about', label: 'about.ts', icon: 'fa-file-code' },
@@ -24,9 +25,21 @@ function App() {
   const scrollToSection = (sectionId) => {
     setActiveSection(sectionId)
     const element = document.getElementById(sectionId)
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
+    const container = editorTextRef.current
+    if (!element || !container) return
+
+    // Only scroll the editor pane. scrollIntoView also moves overflow:hidden
+    // ancestors and leaves a blank gap under short last sections like Contact.
+    document.querySelectorAll('.editor-content, .editor-area, .vscode-container').forEach((el) => {
+      el.scrollTop = 0
+    })
+
+    const top =
+      element.getBoundingClientRect().top -
+      container.getBoundingClientRect().top +
+      container.scrollTop
+
+    container.scrollTo({ top, behavior: 'smooth' })
   }
 
   const themeIcon = theme === 'dark' ? 'fa-sun' : 'fa-moon'
@@ -107,7 +120,7 @@ function App() {
               <span key={i} className="line-number">{i + 1}</span>
             ))}
           </div>
-          <div className="editor-text">
+          <div className="editor-text" ref={editorTextRef}>
             <About />
             <Educations />
             <Experiences />
